@@ -8,9 +8,7 @@
 import SwiftUI
 
 struct GameView: View {
-    let question: Question
-    
-    @State var guessIndex: Int? = nil
+    @StateObject var viewModel = GameViewModel()
     
     var body: some View {
         ZStack {
@@ -27,12 +25,12 @@ struct GameView: View {
                     .foregroundColor(Color.red)
                     .padding()
                 
-                Text("Question 1 / 4")
+                Text(viewModel.progressText)
                     .padding()
                 
                 Spacer()
                 
-                Text(question.questionText)
+                Text(viewModel.questionText)
                     .font(.title)
                     .multilineTextAlignment(.center)
                     .padding()
@@ -41,28 +39,20 @@ struct GameView: View {
                 Spacer()
                 
                 HStack {
-                    ForEach(question.possibleAnswer.indices) { index in
-                        AnswerButton(text: question.possibleAnswer[index]) {
-                            guessIndex = index
+                    ForEach(viewModel.answerIndices) { index in
+                        AnswerButton(text: viewModel.answerText(for: index)) {
+                            viewModel.makeSelectionForCurrentQuestion(at: index)
                         }
-                        .background(colorForButton(at: index))
-                        .disabled(guessIndex != nil)
+                        .background(viewModel.colorForButton(at: index))
+                        .disabled(viewModel.selectionWasMade)
                     }
                 }
-                if guessIndex != nil {
-                    BottomText(str: "Next")
+                if viewModel.selectionWasMade {
+                    BottomText(str: "Next") {
+                        viewModel.advanceGameState()
+                    }
                 }
             }.padding(.bottom)
-        }
-    }
-    
-    func colorForButton(at buttonIndex: Int) -> Color {
-        guard let guessIndex = guessIndex, guessIndex == buttonIndex else { return .clear }
-        
-        if guessIndex == question.correctAnswerIndex {
-            return .green
-        } else {
-            return .red
         }
     }
 }
@@ -83,7 +73,7 @@ struct AnswerButton: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        GameView(question: Question.allQuestions[0])
+        GameView()
         //ContentView()
             //.preferredColorScheme(.dark)
     }
